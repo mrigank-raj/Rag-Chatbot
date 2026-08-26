@@ -8,8 +8,7 @@ import os
 import json
 import re
 from datetime import datetime, timezone
-
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 # ---------------------------------------------------------------------------
