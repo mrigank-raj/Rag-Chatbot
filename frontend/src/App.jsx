@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, TrendingUp, Info, ExternalLink, Bot, User, Clock, AlertTriangle } from 'lucide-react';
 import './index.css';
 
-const API_URL = 'http://127.0.0.1:8000/api/chat';
+const API_URL = `${import.meta.env.VITE_API_BASE ?? 'http://127.0.0.1:8000'}/api/chat`;
 
 const GalaxyBackground = () => {
   // Generate a random set of stars only once on mount

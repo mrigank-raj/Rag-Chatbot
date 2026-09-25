@@ -3,6 +3,8 @@ Main FastAPI application entrypoint.
 Sets up CORS, registers routes, and exposes the app instance.
 """
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,7 +21,7 @@ app = FastAPI(
 # Allows the React frontend (which will run on a different port) to call this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, restrict this to the specific frontend domain
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),  # comma-separated frontend URLs in production
     allow_credentials=True,
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers
