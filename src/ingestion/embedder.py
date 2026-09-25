@@ -4,30 +4,37 @@ BGE-small model, and stores them persistently in ChromaDB.
 """
 
 import os
+from functools import lru_cache
 from typing import List
 
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from fastembed import TextEmbedding
 from langchain_community.vectorstores import Chroma
+from langchain_core.embeddings import Embeddings
 
 from src.utils.config import settings
 
 
-def get_embedding_model() -> HuggingFaceEmbeddings:
+class FastEmbedder(Embeddings):
     """
-    Initialize and return the HuggingFace embeddings model.
-    Downloads the model weights on first run.
+    BGE-small via fastembed (ONNX). Same model and vectors as sentence-transformers
+    (normalized), but ~250 MB of RAM instead of ~1 GB with PyTorch.
     """
-    # Use BGE-small as configured in settings (BAAI/bge-small-en-v1.5)
-    model_kwargs = {'device': 'cpu'}
-    encode_kwargs = {'normalize_embeddings': True} # BGE models perform best with normalized embeddings (Cosine Similarity)
-    
+
+    def __init__(self, model_name: str):
+        self.model = TextEmbedding(model_name=model_name, cache_dir=os.getenv("FASTEMBED_CACHE_PATH"))
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [v.tolist() for v in self.model.embed(texts)]
+
+    def embed_query(self, text: str) -> List[float]:
+        return self.embed_documents([text])[0]
+
+
+@lru_cache(maxsize=1)
+def get_embedding_model() -> FastEmbedder:
+    """Return the shared embedding model (loaded once; downloads weights on first run)."""
     print(f"Loading embedding model: {settings.EMBEDDING_MODEL}...")
-    embeddings = HuggingFaceEmbeddings(
-        model_name=settings.EMBEDDING_MODEL,
-        model_kwargs=model_kwargs,
-        encode_kwargs=encode_kwargs
-    )
-    return embeddings
+    return FastEmbedder(settings.EMBEDDING_MODEL)
 
 
 def get_vectorstore() -> Chroma:

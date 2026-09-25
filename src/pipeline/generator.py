@@ -27,6 +27,7 @@ class ResponseGenerator:
             temperature=0.0,
             model_name=settings.GROQ_MODEL,
             api_key=settings.GROQ_API_KEY,
+            reasoning_effort="low",
         )
         self.prompt = PromptTemplate.from_template(GENERATION_PROMPT)
         self.chain = self.prompt | self.llm

@@ -1,9 +1,3 @@
----
-title: HDFC MF RAG API
-sdk: docker
-app_port: 7860
----
-
 # HDFC Mutual Fund Facts-Only RAG Assistant 🚀🌌
 
 An end-to-end Retrieval-Augmented Generation (RAG) chatbot designed exclusively to provide objective, factual information about 5 specific HDFC Mutual Fund schemes. 

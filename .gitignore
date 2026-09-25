@@ -4,3 +4,4 @@ db/metadata.db
 __pycache__/
 *.pyc
 data/raw/
+.fastembed/

@@ -27,7 +27,8 @@ class QueryClassifier:
             temperature=0.0,
             model_name=settings.GROQ_MODEL,
             api_key=settings.GROQ_API_KEY,
-            max_tokens=5, # We only need 1 word back
+            reasoning_effort="low",
+            max_tokens=256, # 1 word back, but reasoning models spend tokens thinking first
         )
         self.prompt = PromptTemplate.from_template(CLASSIFICATION_PROMPT)
         self.chain = self.prompt | self.llm
