@@ -38,3 +38,8 @@ jobs:
         git add -f vectorstore/ db/metadata.db
         # Only commit if there are changes
         git diff --quiet && git diff --staged --quiet || (git commit -m "chore: automated daily vectorstore update" && git push)
+
+    - name: Redeploy backend on Vercel
+      env:
+        VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+      run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
