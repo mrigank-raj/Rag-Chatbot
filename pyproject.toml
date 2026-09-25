@@ -1,0 +1,21 @@
+[project]
+name = "hdfc-mf-rag-api"
+version = "0.1.0"
+requires-python = ">=3.11"
+# Runtime deps for the Vercel deployment (requirements.txt is used by local dev and the ingest workflow)
+dependencies = [
+  "fastapi>=0.100",
+  "langchain>=0.2",
+  "langchain-community>=0.2",
+  "langchain-text-splitters>=0.2",
+  "langchain-groq>=0.1",
+  "chromadb>=0.4",
+  "fastembed>=0.3",
+  "requests>=2.31",
+  "python-dotenv>=1.0",
+  "uvicorn>=0.27",
+  "tenacity>=8.2.0",
+]
+
+[tool.vercel]
+entrypoint = "src.api.main:app"

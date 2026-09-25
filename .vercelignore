@@ -1,0 +1,8 @@
+frontend
+docs
+tests
+.fastembed
+.pytest_cache
+.env
+data/raw
+__pycache__

@@ -1,49 +1,39 @@
-# Deployment Plan (free tier only)
+# Deployment (free tier, no card)
 
-| Piece | Platform | Notes |
+| Piece | Platform | URL |
 |---|---|---|
-| Backend (FastAPI + ChromaDB + fastembed) | **Render** free web service | Config in [render.yaml](../render.yaml). ~280 MB RAM, fits the 512 MB limit. |
-| Frontend (Vite + React) | **Vercel** Hobby | Root directory `frontend`. |
-| LLM | **Groq** free tier | Model set by `GROQ_MODEL` (default `openai/gpt-oss-20b`). |
-| Daily data refresh | **GitHub Actions** | Commits fresh `vectorstore/` to `main`; Render auto-redeploys on that push. |
+| Frontend (Vite + React) | Vercel project `hdfc-mf-rag-chat`, root dir `frontend` | https://hdfc-mf-rag-chat.vercel.app |
+| Backend (FastAPI + ChromaDB + fastembed) | Vercel project `hdfc-mf-rag-api`, root dir `.` | https://hdfc-mf-rag-api.vercel.app |
+| LLM | Groq free tier (`GROQ_MODEL`, default `openai/gpt-oss-20b`) | |
+| Daily data refresh | GitHub Actions ([ingest_cron.yml](../.github/workflows/ingest_cron.yml)) | commits `vectorstore/` + `db/metadata.db` to `main` |
 
 ```
-User -> Vercel (React) -> Render (FastAPI) -> Groq
-                              ^ vectorstore/ + db/ come from the repo
-GitHub Action (daily) -> commit to main -> Render redeploys
+User -> Vercel (React) -> Vercel Python function (FastAPI) -> Groq
+                               ^ vectorstore/ + db/ shipped in the repo
 ```
 
-## Why fastembed, not sentence-transformers
+## How the backend runs on Vercel
 
-PyTorch pushes the backend past Render's 512 MB. `fastembed` runs the same
-`BAAI/bge-small-en-v1.5` model on ONNX and produces identical vectors (cosine 1.0
-against the stored ones), so the existing vectorstore is unchanged.
+- Entrypoint: `[tool.vercel] entrypoint` in [pyproject.toml](../pyproject.toml) (`src.api.main:app`). The `dependencies` list there is the runtime set; `requirements.txt` is for local dev and the ingest workflow. Keep them in sync.
+- Vercel's filesystem is read-only except `/tmp`. [src/utils/config.py](../src/utils/config.py) copies `vectorstore/` and `db/metadata.db` to `/tmp` on cold start and points the model cache (`FASTEMBED_CACHE_PATH`, `HF_HOME`) there too.
+- [.vercelignore](../.vercelignore) keeps `frontend/`, `docs/`, `tests/` out of the backend upload.
+- Embeddings use `fastembed` (ONNX), which gives the same vectors as sentence-transformers (cosine 1.0 against the stored ones).
+
+## Environment variables
+
+| Project | Variable | Value |
+|---|---|---|
+| `hdfc-mf-rag-api` | `GROQ_API_KEY` | your Groq key |
+| `hdfc-mf-rag-api` | `ALLOWED_ORIGINS` | `https://hdfc-mf-rag-chat.vercel.app` (comma-separate more) |
+| `hdfc-mf-rag-chat` | `VITE_API_BASE` | `https://hdfc-mf-rag-api.vercel.app` (baked in at build; redeploy after changing) |
+
+## Deploying
+
+- Frontend: push to `main` (git-connected, builds from `frontend/`).
+- Backend: `npx vercel deploy --prod` from the repo root (linked to `hdfc-mf-rag-api`).
 
 ## Free-tier limits
 
-- Render free services sleep after 15 min idle; the first request afterwards takes ~30-60 s. The UI shows "Checking the scheme pages" meanwhile.
-- Free instances get ~750 hours/month, enough for one always-available service.
+- The first request after idle is a cold start: the function copies data, downloads the ~65 MB embedding model and loads it (~10 s). Warm requests take ~1-2 s.
 - Groq free tier is rate limited; the code retries with backoff.
 - Vercel Hobby is non-commercial use only.
-
-## Steps
-
-### 1. Backend on Render
-1. Sign in at https://dashboard.render.com with GitHub.
-2. Open https://dashboard.render.com/blueprint/new?repo=https://github.com/mrigank-raj/Rag-Chatbot and apply the blueprint (`render.yaml`).
-3. When prompted, set `GROQ_API_KEY`. Leave `ALLOWED_ORIGINS` for step 3.
-4. Wait for the first build (~5 min). Check `https://<service>.onrender.com/` returns the welcome message and `/api/health` reports healthy.
-
-### 2. Frontend on Vercel
-1. Project `hdfc-mf-rag-chat` is already linked to this repo.
-2. Set env var `VITE_API_BASE=https://<service>.onrender.com` (Production), then redeploy.
-
-### 3. Lock down CORS
-In Render, set `ALLOWED_ORIGINS=https://<your-vercel-domain>` (comma-separate multiple origins) and redeploy.
-
-## Verification
-
-- [ ] `GET <render-url>/api/health` returns healthy
-- [ ] A fund question in the Vercel UI returns a sourced answer
-- [ ] No CORS errors in the browser console
-- [ ] Manually run the ingest workflow; Render redeploys and still answers
