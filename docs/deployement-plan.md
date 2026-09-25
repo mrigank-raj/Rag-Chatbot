@@ -16,7 +16,7 @@ User -> Vercel (React) -> Vercel Python function (FastAPI) -> Groq
 
 - Entrypoint: `[tool.vercel] entrypoint` in [pyproject.toml](../pyproject.toml) (`src.api.main:app`). The `dependencies` list there is the runtime set; `requirements.txt` is for local dev and the ingest workflow. Keep them in sync.
 - Vercel's filesystem is read-only except `/tmp`. [src/utils/config.py](../src/utils/config.py) copies `vectorstore/` and `db/metadata.db` to `/tmp` on cold start and points the model cache (`FASTEMBED_CACHE_PATH`, `HF_HOME`) there too.
-- [.vercelignore](../.vercelignore) keeps `frontend/`, `docs/`, `tests/` out of the backend upload.
+- [.vercelignore](../.vercelignore) keeps `docs/` and `tests/` out of the backend upload. Do not add `frontend/` to it: Vercel applies it to the frontend project's git builds too and would break them.
 - Embeddings use `fastembed` (ONNX), which gives the same vectors as sentence-transformers (cosine 1.0 against the stored ones).
 
 ## Environment variables
