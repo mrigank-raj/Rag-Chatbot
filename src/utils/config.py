@@ -22,6 +22,7 @@ if os.getenv("VERCEL"):
     os.environ["SQLITE_DB_PATH"] = "/tmp/db/metadata.db"
     os.environ.setdefault("FASTEMBED_CACHE_PATH", "/tmp/fastembed")
     os.environ.setdefault("HF_HOME", "/tmp/hf")  # hf-xet writes logs under HF_HOME; $HOME is read-only
+    os.environ.setdefault("HF_HUB_DISABLE_XET", "1")  # plain HTTP download; hf-xet's chunk cache would need extra /tmp space
 
 
 class Settings:

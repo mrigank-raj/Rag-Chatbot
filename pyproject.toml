@@ -19,3 +19,9 @@ dependencies = [
 
 [tool.vercel]
 entrypoint = "src.api.main:app"
+
+[tool.uv]
+# chromadb requires kubernetes (~75 MB) only for its distributed server mode, which this app never uses.
+# Vercel installs runtime deps into /tmp (~512 MB) on cold start; with kubernetes there, the 66 MB
+# embedding model no longer fits and the RAG pipeline fails to initialize.
+override-dependencies = ["kubernetes; sys_platform == 'never'"]
